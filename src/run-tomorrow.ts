@@ -39,7 +39,7 @@ async function runTomorrow() {
   const logger = getRunLogger("tomorrow");
   try {
     const price = "0.8"; // 明天价格设置为0.8
-    const quantity = "5000"; // 数量设置为5000
+    const quantity = "4990"; // 数量设置为5000
     const targetTime = await getTomorrowAt18();
 
     logger.info("======== RED USDT 限价单下单程序（明天） ========");
