@@ -154,8 +154,46 @@ async function main(
   // 等待直到开始时间，使用校准后的时间
   const timeUntilStart = startTime - getAdjustedTime();
   if (timeUntilStart > 0) {
-    logger.info(`等待 ${Math.floor(timeUntilStart / 1000)} 秒后开始下单`);
-    await new Promise((resolve) => setTimeout(resolve, timeUntilStart));
+    const waitSeconds = Math.floor(timeUntilStart / 1000);
+    const waitHours = Math.floor(waitSeconds / 3600);
+    const waitMinutes = Math.floor((waitSeconds % 3600) / 60);
+    const waitRemainingSeconds = waitSeconds % 60;
+
+    logger.info(
+      `等待 ${waitSeconds} 秒后开始下单 (${waitHours}小时${waitMinutes}分${waitRemainingSeconds}秒)`
+    );
+
+    // 如果等待时间大于1小时，每小时输出一次等待状态
+    if (waitSeconds > 3600) {
+      const intervalId = setInterval(() => {
+        const remainingTime = startTime - getAdjustedTime();
+        if (remainingTime <= 0) {
+          clearInterval(intervalId);
+          return;
+        }
+
+        const remainingSeconds = Math.floor(remainingTime / 1000);
+        const remainingHours = Math.floor(remainingSeconds / 3600);
+        const remainingMinutes = Math.floor((remainingSeconds % 3600) / 60);
+        const remainingRemainingSeconds = remainingSeconds % 60;
+
+        logger.info(
+          `剩余等待时间: ${remainingHours}小时${remainingMinutes}分${remainingRemainingSeconds}秒`
+        );
+      }, 3600 * 1000); // 每小时输出一次
+
+      // 确保在定时器完成前不会退出
+      const waitPromise = new Promise((resolve) =>
+        setTimeout(resolve, timeUntilStart)
+      );
+      await waitPromise;
+
+      // 清除计时器，防止资源泄漏
+      clearInterval(intervalId);
+    } else {
+      // 等待时间不长，直接等待
+      await new Promise((resolve) => setTimeout(resolve, timeUntilStart));
+    }
   }
 
   logger.info("开始执行下单!");

@@ -25,10 +25,17 @@ async function getTodayAt18() {
   logger.info(`当前Binance校准时间: ${formatToUTC8(new Date(now))}`);
   logger.info(`目标执行时间: ${formatToUTC8(targetTime)} (UTC+8)`);
 
-  // 如果目标时间已过，输出警告信息
-  if (now > targetTime.getTime()) {
-    logger.warn(`警告: 当前时间已经过了今天的18:00 (UTC+8)，将使用明天的18:00`);
+  // 这里不需要额外检查，因为createTargetTimeUTC8函数已经处理了时间调整
+  // 如果有警告日志，就记录一下更详细的信息
+  if (targetTime.getTime() > now + 24 * 60 * 60 * 1000) {
+    logger.info(`已经自动调整为明天的目标时间: ${formatToUTC8(targetTime)}`);
   }
+
+  // 显示等待时间
+  const waitTimeSeconds = Math.floor((targetTime.getTime() - now) / 1000);
+  const waitTimeHours = Math.floor(waitTimeSeconds / 3600);
+  const waitTimeMinutes = Math.floor((waitTimeSeconds % 3600) / 60);
+  logger.info(`距离执行时间还有: ${waitTimeHours}小时${waitTimeMinutes}分钟`);
 
   return targetTime;
 }

@@ -25,6 +25,12 @@ async function getTomorrowAt18() {
   logger.info(`当前Binance校准时间: ${formatToUTC8(new Date(now))}`);
   logger.info(`目标执行时间: ${formatToUTC8(targetTime)} (UTC+8)`);
 
+  // 显示等待时间
+  const waitTimeSeconds = Math.floor((targetTime.getTime() - now) / 1000);
+  const waitTimeHours = Math.floor(waitTimeSeconds / 3600);
+  const waitTimeMinutes = Math.floor((waitTimeSeconds % 3600) / 60);
+  logger.info(`距离执行时间还有: ${waitTimeHours}小时${waitTimeMinutes}分钟`);
+
   return targetTime;
 }
 

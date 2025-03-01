@@ -105,34 +105,42 @@ export function createTargetTimeUTC8(
 ): Date {
   // 获取当前校准时间
   const now = getAdjustedDate();
+  const logger = getSystemLogger();
 
-  // 创建目标Date对象
-  const targetDate = new Date(now);
+  // 重新实现，不依赖于时区偏移计算
+  // 先获取当前的UTC日期
+  const currentUtcYear = now.getUTCFullYear();
+  const currentUtcMonth = now.getUTCMonth();
+  const currentUtcDate = now.getUTCDate();
 
-  // 计算UTC+8时区与本地时区的偏差（小时）
-  // 获取本地时区偏移量（分钟）
-  const localOffset = targetDate.getTimezoneOffset();
-  // UTC+8的偏移量为-480分钟 (-8小时)
-  const targetOffset = -480;
-  // 计算本地时区到UTC+8的偏移小时数
-  const offsetHours = (targetOffset - localOffset) / 60;
+  // 创建基于UTC时间的目标日期（UTC+0）
+  const targetDate = new Date(
+    Date.UTC(currentUtcYear, currentUtcMonth, currentUtcDate)
+  );
 
-  // 设置目标时间，考虑时区差异
-  targetDate.setHours(hours - offsetHours);
-  targetDate.setMinutes(minutes);
-  targetDate.setSeconds(0);
-  targetDate.setMilliseconds(0);
+  // 直接设置UTC+8的时间（即UTC时间+8小时）
+  // 例如，如果目标是UTC+8的18:00，对应的UTC时间是10:00
+  const utcHour = hours - 8; // UTC+8时间转换为UTC时间
+  targetDate.setUTCHours(utcHour, minutes, 0, 0);
 
-  // 如果需要，调整到未来的某一天
+  // 调整到指定的天数
   if (days > 0) {
-    targetDate.setDate(targetDate.getDate() + days);
+    targetDate.setUTCDate(targetDate.getUTCDate() + days);
   }
 
-  // 判断是否需要调整到明天
+  // 如果当前时间已经过了今天的目标时间，并且days=0，则调整到明天
   const nowTime = now.getTime();
   if (days === 0 && nowTime > targetDate.getTime()) {
-    targetDate.setDate(targetDate.getDate() + 1);
+    targetDate.setUTCDate(targetDate.getUTCDate() + 1);
+    // 输出日志，说明已调整至明天
+    logger.info(
+      `当前时间已超过今天的${hours}:${minutes} (UTC+8)，目标时间已调整至明天`
+    );
   }
+
+  // 输出创建的目标时间（显示UTC和UTC+8两种格式）方便调试
+  logger.info(`创建的目标时间(UTC): ${targetDate.toISOString()}`);
+  logger.info(`创建的目标时间(UTC+8): ${formatToUTC8(targetDate)}`);
 
   return targetDate;
 }
