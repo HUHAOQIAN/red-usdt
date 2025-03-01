@@ -1,0 +1,73 @@
+开始测试所有 4 个账号
+
+
+========== 开始对账号 BinanceJazzshow2023 进行全流程测试 ==========
+
+===== BinanceJazzshow2023 开始测试下单 =====
+测试下单价格: 0.6 USDT, 数量: 5000 RED
+BinanceJazzshow2023 开始下单，价格: 0.6 USDT
+
+========== 开始对账号 BinanceJazzshow2023 进行全流程测试 ==========
+
+===== BinanceJazzshow2023 开始测试下单 =====
+测试下单价格: 0.6 USDT, 数量: 5000 RED
+BinanceJazzshow2023 开始下单，价格: 0.6 USDT
+BinanceJazzshow2023 测试下单失败: BinanceJazzshow2023 Request failed: Request failed with status code 400
+BinanceJazzshow2023 查询账户资产中...
+BinanceJazzshow2023 测试下单失败: BinanceJazzshow2023 Request failed: Request failed with status code 400
+BinanceJazzshow2023 查询账户资产中...
+BinanceJazzshow2023 资产情况:
+  RED: 0.00000000 (可用), 0.00000000 (锁定)
+  USDT: 46.03065728 (可用), 160.00000000 (锁定)
+
+========== 账号 BinanceJazzshow2023 测试完成 ==========
+
+
+========== 开始对账号 Binance576029988 进行全流程测试 ==========
+
+===== Binance576029988 开始测试下单 =====
+测试下单价格: 0.6 USDT, 数量: 5000 RED
+Binance576029988 开始下单，价格: 0.6 USDT
+BinanceJazzshow2023 资产情况:
+  RED: 0.00000000 (可用), 0.00000000 (锁定)
+  USDT: 46.03065728 (可用), 160.00000000 (锁定)
+
+========== 账号 BinanceJazzshow2023 测试完成 ==========
+
+Binance576029988 测试下单失败: Binance576029988 Request failed: Request failed with status code 400
+Binance576029988 查询账户资产中...
+Binance576029988 资产情况:
+  RED: 0.00000000 (可用), 0.00000000 (锁定)
+  USDT: 21.60649465 (可用), 280.00000000 (锁定)
+
+========== 账号 Binance576029988 测试完成 ==========
+
+
+========== 开始对账号 huniu 进行全流程测试 ==========
+
+===== huniu 开始测试下单 =====
+测试下单价格: 0.6 USDT, 数量: 5000 RED
+huniu 开始下单，价格: 0.6 USDT
+huniu 测试下单失败: huniu Request failed: Request failed with status code 400
+huniu 查询账户资产中...
+huniu 资产情况:
+  RED: 15.30735072 (可用), 0.00000000 (锁定)
+  USDT: 3088.42671849 (可用), 320.00000000 (锁定)
+
+========== 账号 huniu 测试完成 ==========
+
+
+========== 开始对账号 tu03@126 进行全流程测试 ==========
+
+===== tu03@126 开始测试下单 =====
+测试下单价格: 0.6 USDT, 数量: 5000 RED
+tu03@126 开始下单，价格: 0.6 USDT
+tu03@126 测试下单失败: tu03@126 Request failed: Request failed with status code 400
+tu03@126 查询账户资产中...
+tu03@126 资产情况:
+  RED: 0.00000000 (可用), 0.00000000 (锁定)
+  USDT: 3880.12534000 (可用), 120.00000000 (锁定)
+
+========== 账号 tu03@126 测试完成 ==========
+
+所有账号测试完成!
