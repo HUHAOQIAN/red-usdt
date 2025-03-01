@@ -1,7 +1,11 @@
 import { binanceRequest, BinanceAccountInfo } from "../utils/signature";
 import fs from "fs";
 import { getOrderLogger, closeAllLoggers } from "./logger";
-import { getAdjustedTime, getAdjustedDate } from "../utils/timeSync";
+import {
+  getAdjustedTime,
+  getAdjustedDate,
+  formatToUTC8,
+} from "../utils/timeSync";
 
 // 查询当前限价订单
 async function queryLimitOrders(account: BinanceAccountInfo) {
@@ -96,9 +100,9 @@ async function tryOrderUntilSuccess(
   }
 
   logger.info(
-    `${account.name} 开始重试下单，截止时间: ${new Date(
-      endTime
-    ).toLocaleString()} (UTC+8)`
+    `${account.name} 开始重试下单，截止时间: ${formatToUTC8(
+      new Date(endTime)
+    )} (UTC+8)`
   );
 
   while (!orderResult.success && getAdjustedTime() <= endTime) {
@@ -135,8 +139,8 @@ async function main(
   }
 
   logger.info(`使用价格: ${price} USDT，数量: ${quantity} RED`);
-  logger.info(`目标时间: ${targetTime.toLocaleString()} (UTC+8)`);
-  logger.info(`当前校准时间: ${getAdjustedDate().toLocaleString()}`);
+  logger.info(`目标时间: ${formatToUTC8(targetTime)} (UTC+8)`);
+  logger.info(`当前校准时间: ${formatToUTC8(getAdjustedDate())}`);
   logger.info(`账户数量: ${accounts.length}`);
 
   // 计算开始时间（目标时间前10秒）
@@ -144,8 +148,8 @@ async function main(
   // 设置结束时间窗口（比如尝试30秒）
   const endTime = targetTime.getTime() + 20 * 1000;
 
-  logger.info(`开始尝试时间: ${new Date(startTime).toLocaleString()} (UTC+8)`);
-  logger.info(`结束时间窗口: ${new Date(endTime).toLocaleString()} (UTC+8)`);
+  logger.info(`开始尝试时间: ${formatToUTC8(new Date(startTime))} (UTC+8)`);
+  logger.info(`结束时间窗口: ${formatToUTC8(new Date(endTime))} (UTC+8)`);
 
   // 等待直到开始时间，使用校准后的时间
   const timeUntilStart = startTime - getAdjustedTime();
