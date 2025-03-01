@@ -1,11 +1,24 @@
 {
+  "name": "exchanges-ts",
+  "version": "1.0.0",
+  "description": "Exchanges Trading Scripts",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "handle-apis": "ts-node src/handle-apis.ts",
+    "handle-apis-sh": "bash src/handle-apis.sh"
+  },
+  "dependencies": {
+    "csv-parse": "^5.5.0"
+  },
   "devDependencies": {
-    "@types/node": "^22.13.7",
+    "@types/node": "^20.8.9",
     "axios": "^1.8.1",
     "dotenv": "^16.4.7",
     "fs": "^0.0.1-security",
     "socks-proxy-agent": "^8.0.5",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.8.2"
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
   }
 }

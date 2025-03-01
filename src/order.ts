@@ -1,6 +1,7 @@
 import { binanceRequest, BinanceAccountInfo } from "../utils/signature";
 import fs from "fs";
 import { getOrderLogger, closeAllLoggers } from "./logger";
+import { getAdjustedTime, getAdjustedDate } from "../utils/timeSync";
 
 // 查询当前限价订单
 async function queryLimitOrders(account: BinanceAccountInfo) {
@@ -88,8 +89,8 @@ async function tryOrderUntilSuccess(
   const logger = getOrderLogger("retry");
   let orderResult = { success: false };
 
-  // 如果当前时间已经超过结束时间，则不再尝试
-  if (Date.now() > endTime) {
+  // 如果当前时间已经超过结束时间，则不再尝试 - 使用校准后的时间
+  if (getAdjustedTime() > endTime) {
     logger.warn(`${account.name} 已超过下单时间窗口，停止尝试`);
     return false;
   }
@@ -97,10 +98,10 @@ async function tryOrderUntilSuccess(
   logger.info(
     `${account.name} 开始重试下单，截止时间: ${new Date(
       endTime
-    ).toLocaleString()}`
+    ).toLocaleString()} (UTC+8)`
   );
 
-  while (!orderResult.success && Date.now() <= endTime) {
+  while (!orderResult.success && getAdjustedTime() <= endTime) {
     orderResult = await order(account, price, quantity);
 
     if (!orderResult.success) {
@@ -134,7 +135,8 @@ async function main(
   }
 
   logger.info(`使用价格: ${price} USDT，数量: ${quantity} RED`);
-  logger.info(`目标时间: ${targetTime.toLocaleString()}`);
+  logger.info(`目标时间: ${targetTime.toLocaleString()} (UTC+8)`);
+  logger.info(`当前校准时间: ${getAdjustedDate().toLocaleString()}`);
   logger.info(`账户数量: ${accounts.length}`);
 
   // 计算开始时间（目标时间前10秒）
@@ -142,11 +144,11 @@ async function main(
   // 设置结束时间窗口（比如尝试30秒）
   const endTime = targetTime.getTime() + 20 * 1000;
 
-  logger.info(`开始尝试时间: ${new Date(startTime).toLocaleString()}`);
-  logger.info(`结束时间窗口: ${new Date(endTime).toLocaleString()}`);
+  logger.info(`开始尝试时间: ${new Date(startTime).toLocaleString()} (UTC+8)`);
+  logger.info(`结束时间窗口: ${new Date(endTime).toLocaleString()} (UTC+8)`);
 
-  // 等待直到开始时间
-  const timeUntilStart = startTime - Date.now();
+  // 等待直到开始时间，使用校准后的时间
+  const timeUntilStart = startTime - getAdjustedTime();
   if (timeUntilStart > 0) {
     logger.info(`等待 ${Math.floor(timeUntilStart / 1000)} 秒后开始下单`);
     await new Promise((resolve) => setTimeout(resolve, timeUntilStart));

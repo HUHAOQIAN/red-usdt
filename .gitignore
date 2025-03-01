@@ -38,3 +38,9 @@ Thumbs.db
 
 apis.json
 .cursor
+win_local_250228.pem
+apis.csv
+/src/handle-apis.sh
+/src/handle-apis.ts
+/scripts/distribute-apis.js
+README-handle-apis.md

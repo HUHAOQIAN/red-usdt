@@ -1,16 +1,32 @@
 import { main } from "./order";
 import fs from "fs";
 import { getRunLogger, closeAllLoggers } from "./logger";
+import {
+  initTimeSync,
+  createTargetTimeUTC8,
+  getAdjustedTime,
+  getAdjustedDate,
+} from "../utils/timeSync";
 
-// 设置今天下午18:00作为目标时间
-function getTodayAt18() {
-  const targetTime = new Date();
-  targetTime.setHours(18, 0, 0, 0); // 设置为今天18:00 (UTC+8)
+// 设置今天下午18:00作为目标时间 (UTC+8)
+async function getTodayAt18() {
+  // 初始化时间同步
+  await initTimeSync();
 
-  // 如果当前时间已经过了18:00，提醒用户
-  if (Date.now() > targetTime.getTime()) {
-    console.log("警告: 当前时间已经过了今天的18:00，将使用明天的18:00");
-    targetTime.setDate(targetTime.getDate() + 1);
+  // 创建UTC+8时区的今天18:00目标时间
+  const targetTime = createTargetTimeUTC8(18, 0, 0);
+
+  // 获取当前校准后的时间
+  const now = getAdjustedTime();
+
+  // 日志记录
+  const logger = getRunLogger("time");
+  logger.info(`当前Binance校准时间: ${new Date(now).toLocaleString()}`);
+  logger.info(`目标执行时间: ${targetTime.toLocaleString()} (UTC+8)`);
+
+  // 如果目标时间已过，输出警告信息
+  if (now > targetTime.getTime()) {
+    logger.warn(`警告: 当前时间已经过了今天的18:00 (UTC+8)，将使用明天的18:00`);
   }
 
   return targetTime;
@@ -22,12 +38,13 @@ async function run() {
   try {
     const price = "0.6"; // 价格设置为0.6
     const quantity = "5000"; // 数量设置为5000
-    const targetTime = getTodayAt18();
+    const targetTime = await getTodayAt18();
 
     logger.info("======== RED USDT 限价单下单程序 ========");
     logger.info(`设置价格: ${price} USDT`);
     logger.info(`设置数量: ${quantity} RED`);
-    logger.info(`目标时间: ${targetTime.toLocaleString()}`);
+    logger.info(`目标时间: ${targetTime.toLocaleString()} (UTC+8)`);
+    logger.info(`当前校准时间: ${getAdjustedDate().toLocaleString()}`);
     logger.info("=======================================");
 
     // 读取所有账户
