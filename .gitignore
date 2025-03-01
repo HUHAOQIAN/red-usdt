@@ -1,4 +1,40 @@
+# 依赖
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+package-lock.json
+
+# 编译输出
+dist/
+build/
+*.js
+*.js.map
+*.d.ts
+
+# 环境变量文件
 .env
-node_modules
+.env.local
+.env.*.local
+
+# 日志文件
+logs/
+*.log
+
+# 编辑器配置
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 其他
+.npmrc
+.yarnrc
+.pnpm-debug.log
+
 apis.json
 .cursor

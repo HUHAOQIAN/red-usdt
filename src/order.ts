@@ -1,8 +1,10 @@
 import { binanceRequest, BinanceAccountInfo } from "../utils/signature";
 import fs from "fs";
+import { getOrderLogger, closeAllLoggers } from "./logger";
 
 // 查询当前限价订单
 async function queryLimitOrders(account: BinanceAccountInfo) {
+  const logger = getOrderLogger("query");
   const endpointPath = "/api/v3/openOrders";
   const method = "GET";
   const timestamp = Date.now().toString();
@@ -12,14 +14,15 @@ async function queryLimitOrders(account: BinanceAccountInfo) {
   };
   const params = new URLSearchParams(requestBody);
 
-  console.log(`${account.name} 查询限价订单`);
+  logger.info(`${account.name} 查询限价订单`);
   const res = await binanceRequest(account, endpointPath, method, null, params);
-  console.log(`${account.name} 当前限价订单:`, JSON.stringify(res, null, 2));
+  logger.info(`${account.name} 当前限价订单: ${JSON.stringify(res, null, 2)}`);
   return res;
 }
 
 // 取消所有限价订单
 async function cancelAllLimitOrders(account: BinanceAccountInfo) {
+  const logger = getOrderLogger("cancel");
   const endpointPath = "/api/v3/openOrders";
   const method = "DELETE";
   const timestamp = Date.now().toString();
@@ -29,9 +32,9 @@ async function cancelAllLimitOrders(account: BinanceAccountInfo) {
   };
   const params = new URLSearchParams(requestBody);
 
-  console.log(`${account.name} 取消所有限价订单`);
+  logger.info(`${account.name} 取消所有限价订单`);
   const res = await binanceRequest(account, endpointPath, method, null, params);
-  console.log(`${account.name} 取消订单结果:`, JSON.stringify(res, null, 2));
+  logger.info(`${account.name} 取消订单结果: ${JSON.stringify(res, null, 2)}`);
   return res;
 }
 
@@ -41,6 +44,7 @@ async function order(
   price: string,
   quantity: string = "5000"
 ) {
+  const logger = getOrderLogger("place");
   const endpointPath = "/api/v3/order";
   const method = "POST";
   const timestamp = Date.now().toString();
@@ -56,7 +60,7 @@ async function order(
   const params = new URLSearchParams(requestBody);
 
   try {
-    console.log(
+    logger.info(
       `${account.name} 开始下单，价格: ${price} USDT，数量: ${quantity} RED`
     );
     const res = await binanceRequest(
@@ -66,10 +70,10 @@ async function order(
       null,
       params
     );
-    console.log(`${account.name} 下单成功，订单ID: ${res.orderId}`);
+    logger.success(`${account.name} 下单成功，订单ID: ${res.orderId}`);
     return { success: true, data: res };
   } catch (error) {
-    console.error(`${account.name} 下单失败:`, error.message);
+    logger.error(`${account.name} 下单失败: ${error.message}`);
     return { success: false, error: error.message };
   }
 }
@@ -81,21 +85,35 @@ async function tryOrderUntilSuccess(
   endTime: number,
   quantity: string = "5000"
 ) {
+  const logger = getOrderLogger("retry");
   let orderResult = { success: false };
 
   // 如果当前时间已经超过结束时间，则不再尝试
   if (Date.now() > endTime) {
-    console.log(`${account.name} 已超过下单时间窗口，停止尝试`);
+    logger.warn(`${account.name} 已超过下单时间窗口，停止尝试`);
     return false;
   }
+
+  logger.info(
+    `${account.name} 开始重试下单，截止时间: ${new Date(
+      endTime
+    ).toLocaleString()}`
+  );
 
   while (!orderResult.success && Date.now() <= endTime) {
     orderResult = await order(account, price, quantity);
 
     if (!orderResult.success) {
       // 如果是API错误且不是"不在交易时间"错误，则等待短暂时间后重试
-      await new Promise((resolve) => setTimeout(resolve, 50)); // 200ms延迟，避免频繁请求
+      await new Promise((resolve) => setTimeout(resolve, 50)); // 50ms延迟，避免频繁请求
+      logger.info(`${account.name} 下单失败，重试中...`);
     }
+  }
+
+  if (orderResult.success) {
+    logger.success(`${account.name} 最终下单成功`);
+  } else {
+    logger.error(`${account.name} 在截止时间内未能成功下单`);
   }
 
   return orderResult.success;
@@ -108,29 +126,33 @@ async function main(
   quantity: string = "5000",
   accounts: BinanceAccountInfo[] = null
 ) {
+  const logger = getOrderLogger("main");
+
   // 如果未提供账户，从配置文件加载
   if (!accounts) {
     accounts = JSON.parse(fs.readFileSync("./apis.json", "utf-8"));
   }
 
-  console.log(`使用价格: ${price} USDT，数量: ${quantity} RED`);
-  console.log(`目标时间: ${targetTime.toLocaleString()}`);
+  logger.info(`使用价格: ${price} USDT，数量: ${quantity} RED`);
+  logger.info(`目标时间: ${targetTime.toLocaleString()}`);
+  logger.info(`账户数量: ${accounts.length}`);
 
   // 计算开始时间（目标时间前10秒）
   const startTime = targetTime.getTime() - 10 * 1000;
   // 设置结束时间窗口（比如尝试30秒）
   const endTime = targetTime.getTime() + 20 * 1000;
 
-  console.log(`开始尝试时间: ${new Date(startTime).toLocaleString()}`);
+  logger.info(`开始尝试时间: ${new Date(startTime).toLocaleString()}`);
+  logger.info(`结束时间窗口: ${new Date(endTime).toLocaleString()}`);
 
   // 等待直到开始时间
   const timeUntilStart = startTime - Date.now();
   if (timeUntilStart > 0) {
-    console.log(`等待 ${Math.floor(timeUntilStart / 1000)} 秒后开始下单`);
+    logger.info(`等待 ${Math.floor(timeUntilStart / 1000)} 秒后开始下单`);
     await new Promise((resolve) => setTimeout(resolve, timeUntilStart));
   }
 
-  console.log("开始执行下单!");
+  logger.info("开始执行下单!");
 
   // 并行执行所有账号的下单
   let orderPromises = [];
@@ -139,7 +161,7 @@ async function main(
   }
 
   await Promise.all(orderPromises);
-  console.log("所有账号下单任务完成");
+  logger.success("所有账号下单任务完成");
 }
 
 // 导出方法供其他模块使用
@@ -153,6 +175,7 @@ export {
 
 // 如果直接运行此文件，则执行main函数
 if (require.main === module) {
+  const logger = getOrderLogger("cli");
   // 获取命令行参数
   const args = process.argv.slice(2);
   let price,
@@ -178,6 +201,16 @@ if (require.main === module) {
     targetTimeStr = defaultTime.toISOString();
   }
 
+  logger.info(
+    `启动命令行模式，参数: 价格=${price}, 时间=${targetTimeStr}, 数量=${quantity}`
+  );
   const targetTime = new Date(targetTimeStr);
-  main(price, targetTime, quantity).catch(console.error);
+  main(price, targetTime, quantity)
+    .catch((error) => {
+      logger.error(`执行过程中出错: ${error}`);
+    })
+    .finally(() => {
+      // 确保在程序结束时关闭所有日志文件
+      closeAllLoggers();
+    });
 }

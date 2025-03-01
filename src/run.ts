@@ -1,5 +1,6 @@
 import { main } from "./order";
 import fs from "fs";
+import { getRunLogger, closeAllLoggers } from "./logger";
 
 // 设置今天下午18:00作为目标时间
 function getTodayAt18() {
@@ -17,31 +18,41 @@ function getTodayAt18() {
 
 // 运行下单程序
 async function run() {
+  const logger = getRunLogger("today");
   try {
     const price = "0.6"; // 价格设置为0.6
     const quantity = "5000"; // 数量设置为5000
     const targetTime = getTodayAt18();
 
-    console.log("======== RED USDT 限价单下单程序 ========");
-    console.log(`设置价格: ${price} USDT`);
-    console.log(`设置数量: ${quantity} RED`);
-    console.log(`目标时间: ${targetTime.toLocaleString()}`);
-    console.log("=======================================");
+    logger.info("======== RED USDT 限价单下单程序 ========");
+    logger.info(`设置价格: ${price} USDT`);
+    logger.info(`设置数量: ${quantity} RED`);
+    logger.info(`目标时间: ${targetTime.toLocaleString()}`);
+    logger.info("=======================================");
 
     // 读取所有账户
     const accounts = JSON.parse(fs.readFileSync("./apis.json", "utf-8"));
-    console.log(`准备为 ${accounts.length} 个账号下单`);
+    logger.info(`准备为 ${accounts.length} 个账号下单`);
 
     // 执行主程序
     await main(price, targetTime, quantity);
+    logger.success("下单程序执行完成");
   } catch (error) {
-    console.error("运行过程中出错:", error);
+    logger.error(`运行过程中出错: ${error}`);
   }
 }
 
 // 如果直接运行此文件，则执行run函数
 if (require.main === module) {
-  run().catch(console.error);
+  run()
+    .catch((error) => {
+      const logger = getRunLogger("error");
+      logger.error(`执行过程中出错: ${error}`);
+    })
+    .finally(() => {
+      // 确保在程序结束时关闭所有日志文件
+      closeAllLoggers();
+    });
 }
 
 export { run };
