@@ -44,8 +44,8 @@ async function getTodayAt18() {
 async function run() {
   const logger = getRunLogger("today");
   try {
-    const price = "0.6"; // 价格设置为0.6
-    const quantity = "4990"; // 数量设置为5000
+    const price = "0.8"; // 价格设置为0.6
+    const quantity = "5000"; // 数量设置为5000
     const targetTime = await getTodayAt18();
 
     logger.info("======== RED USDT 限价单下单程序 ========");

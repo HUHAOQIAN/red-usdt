@@ -110,7 +110,7 @@ async function tryOrderUntilSuccess(
 
     if (!orderResult.success) {
       // 如果是API错误且不是"不在交易时间"错误，则等待短暂时间后重试
-      await new Promise((resolve) => setTimeout(resolve, 50)); // 50ms延迟，避免频繁请求
+      // await new Promise((resolve) => setTimeout(resolve, 10)); // 50ms延迟，避免频繁请求
       logger.info(`${account.name} 下单失败，重试中...`);
     }
   }
@@ -144,9 +144,9 @@ async function main(
   logger.info(`账户数量: ${accounts.length}`);
 
   // 计算开始时间（目标时间前10秒）
-  const startTime = targetTime.getTime() - 10 * 1000;
+  const startTime = targetTime.getTime() - 1000;
   // 设置结束时间窗口（比如尝试30秒）
-  const endTime = targetTime.getTime() + 20 * 1000;
+  const endTime = targetTime.getTime() + 2 * 1000;
 
   logger.info(`开始尝试时间: ${formatToUTC8(new Date(startTime))} (UTC+8)`);
   logger.info(`结束时间窗口: ${formatToUTC8(new Date(endTime))} (UTC+8)`);

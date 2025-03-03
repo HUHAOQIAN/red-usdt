@@ -4,6 +4,7 @@ import { SocksProxyAgent } from "socks-proxy-agent";
 
 export type HeadersBinance = {
   "X-MBX-APIKEY": string; // 把你的 API 密钥放在 'X-MBX-APIKEY' 头中
+  "X-MBX-TIME-UNIT": string;
 };
 export type BinanceAccountInfo = {
   mail?: string;
@@ -33,6 +34,7 @@ export async function binanceRequest(
 ) {
   const headers: HeadersBinance = {
     "X-MBX-APIKEY": apiKey,
+    "X-MBX-TIME-UNIT": "MICROSECOND",
   };
   const baseURL =
     marketType === "spot"
