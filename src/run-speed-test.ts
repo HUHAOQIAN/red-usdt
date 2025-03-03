@@ -3,41 +3,14 @@ import {
   testConsecutiveOrders,
   testOrderPerformance,
   testOrderPerformanceOptimized,
+  testNonBlockingOrders,
+  processCommandLineArgs,
 } from "./speedTest";
 import { closeAllLoggers } from "./logger";
 
 // 主函数：根据参数运行不同的测试
 async function main() {
-  const args = process.argv.slice(2);
-  const command = args[0] || "help";
-
-  try {
-    // 初始化时间同步
-    await initTimeSync();
-
-    switch (command) {
-      case "consecutive":
-        // 连续下单测试 - consecutive [账号索引] [价格] [数量] [订单数量] [小时] [分钟]
-        await runConsecutiveTest(args.slice(1));
-        break;
-      case "performance":
-        // 性能测试 - performance [账号索引] [价格] [数量] [持续时间ms] [小时] [分钟]
-        await runPerformanceTest(args.slice(1));
-        break;
-      case "optimized":
-        // 优化版性能测试 - optimized [账号索引] [价格] [数量] [持续时间ms] [小时] [分钟]
-        await runOptimizedTest(args.slice(1));
-        break;
-      case "help":
-      default:
-        showHelp();
-        break;
-    }
-  } catch (error) {
-    console.error("测试执行出错:", error);
-  } finally {
-    closeAllLoggers();
-  }
+  await processCommandLineArgs();
 }
 
 // 运行连续下单测试
@@ -176,7 +149,10 @@ RED-USDT下单速度测试工具
 
 // 如果直接运行此文件
 if (require.main === module) {
-  main();
+  main().catch((error) => {
+    console.error("Error:", error);
+    process.exit(1);
+  });
 }
 
 export { main };

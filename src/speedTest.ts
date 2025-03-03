@@ -1,6 +1,12 @@
 import { binanceRequest, BinanceAccountInfo } from "../utils/signature";
 import fs from "fs";
-import { order, cancelAllLimitOrders, queryLimitOrders } from "./order";
+import {
+  order,
+  cancelAllLimitOrders,
+  queryLimitOrders,
+  placeOrdersNonBlocking,
+  batchPlaceOrdersNonBlocking,
+} from "./order";
 import { getTestLogger, closeAllLoggers, createTestLogger } from "./logger";
 import {
   getAdjustedTime,
@@ -443,13 +449,106 @@ async function testOrderPerformanceOptimized(
   return { orderCount, elapsedTime: totalElapsed };
 }
 
+/**
+ * 测试不等待响应的极限下单性能
+ * 在指定时间发送尽可能多的下单请求，不关心响应
+ */
+async function testNonBlockingOrders(
+  accountIndex?: number,
+  price: string = "0.9", // 使用较高价格确保下单失败
+  quantity: string = "100",
+  durationMs: number = 3000, // 默认持续下单3秒
+  startOffsetMs: number = 1000, // 默认提前1秒开始下单
+  targetHour: number = new Date().getHours(),
+  targetMinute: number = new Date().getMinutes() + 1
+) {
+  const logger = getTestLogger("非阻塞下单测试");
+
+  // 设置目标时间
+  const now = new Date();
+  const targetTime = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    targetHour,
+    targetMinute,
+    0,
+    0
+  );
+
+  logger.info("=== 开始非阻塞下单性能测试 ===");
+  logger.info(
+    `目标时间: ${targetHour}:${
+      targetMinute < 10 ? "0" + targetMinute : targetMinute
+    } (UTC+8)`
+  );
+  logger.info(`价格: ${price} USDT`);
+  logger.info(`数量: ${quantity} RED`);
+  logger.info(`持续时间: ${durationMs}ms`);
+  logger.info(`提前开始: ${startOffsetMs}ms`);
+  logger.info(`预热计划: 目标时间前30秒、15秒和5秒各进行一次`);
+
+  // 获取账号
+  const accounts = getAccounts(accountIndex);
+  logger.info(`选定账号数: ${accounts.length}`);
+
+  // 显示目标时间和当前时间的差距
+  const timeToTarget = targetTime.getTime() - getAdjustedTime();
+  logger.info(`距离目标时间还有 ${timeToTarget / 1000} 秒`);
+
+  // 查询当前持仓
+  for (const account of accounts) {
+    await queryHoldings(account);
+  }
+
+  // 初步检查是否有挂单，如果有则取消
+  for (const account of accounts) {
+    const openOrders = await queryLimitOrders(account);
+    if (openOrders && openOrders.length > 0) {
+      logger.info(`${account.name} 有 ${openOrders.length} 个挂单，取消中...`);
+      await cancelAllLimitOrders(account);
+    } else {
+      logger.info(`${account.name} 没有活跃挂单`);
+    }
+  }
+
+  // 开始批量非阻塞下单测试
+  const results = await batchPlaceOrdersNonBlocking(
+    accounts,
+    price,
+    targetTime,
+    durationMs,
+    startOffsetMs,
+    quantity,
+    true, // 启用预热
+    [30, 15, 5] // 三次预热时间点
+  );
+
+  // 汇总结果
+  const totalRequests = results.reduce(
+    (sum, result) => sum + result.requestCount,
+    0
+  );
+  const avgQps =
+    results.reduce((sum, result) => sum + result.qps, 0) / results.length;
+
+  logger.info("=== 非阻塞下单测试完成 ===");
+  logger.info(`总发送请求数: ${totalRequests}`);
+  logger.info(`平均每账号QPS: ${avgQps.toFixed(2)}`);
+  logger.info(`系统总QPS: ${Math.round(totalRequests / (durationMs / 1000))}`);
+
+  return results;
+}
+
 // 命令行参数处理
 async function processCommandLineArgs() {
   const args = process.argv.slice(2);
   const command = args[0];
 
   if (!command) {
-    console.log("请提供测试命令: consecutive | performance | optimized");
+    console.log(
+      "请提供测试命令: consecutive | performance | optimized | nonblocking"
+    );
     return;
   }
 
@@ -486,8 +585,31 @@ async function processCommandLineArgs() {
         quantity,
         durationMs
       );
+    } else if (command === "nonblocking") {
+      // 非阻塞下单性能测试
+      const accountIndex = args[1] ? parseInt(args[1]) : undefined;
+      const price = args[2] || "0.9";
+      const quantity = args[3] || "100";
+      const durationMs = args[4] ? parseInt(args[4]) : 3000;
+      const startOffsetMs = args[5] ? parseInt(args[5]) : 1000;
+      const targetHour = args[6] ? parseInt(args[6]) : new Date().getHours();
+      const targetMinute = args[7]
+        ? parseInt(args[7])
+        : new Date().getMinutes() + 1;
+
+      await testNonBlockingOrders(
+        accountIndex,
+        price,
+        quantity,
+        durationMs,
+        startOffsetMs,
+        targetHour,
+        targetMinute
+      );
     } else {
-      console.log("未知命令，请使用: consecutive | performance | optimized");
+      console.log(
+        "未知命令，请使用: consecutive | performance | optimized | nonblocking"
+      );
     }
   } catch (error) {
     console.error("执行测试时出错:", error);
@@ -507,4 +629,6 @@ export {
   testOrderPerformanceOptimized,
   warmupConnection,
   queryHoldings,
+  testNonBlockingOrders,
+  processCommandLineArgs,
 };

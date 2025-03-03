@@ -44,23 +44,41 @@ async function getTodayAt18() {
 async function run() {
   const logger = getRunLogger("today");
   try {
-    const price = "0.8"; // 价格设置为0.6
-    const quantity = "5000"; // 数量设置为5000
+    const price = "1.477"; // 价格
+    const quantity = "4875"; // 数量
+    const duration = 2000; // 持续下单时间（毫秒）
+    const startOffset = 100; // 提前时间（毫秒）
+    const symbol = "REDUSDT"; // 交易对
+    const side = "SELL"; // 卖出
     const targetTime = await getTodayAt18();
 
-    logger.info("======== RED USDT 限价单下单程序 ========");
+    logger.info("======== 限价单下单程序 ========");
+    logger.info(`交易对: ${symbol}`);
+    logger.info(`方向: ${side === "SELL" ? "卖出" : "买入"}`);
     logger.info(`设置价格: ${price} USDT`);
-    logger.info(`设置数量: ${quantity} RED`);
+    logger.info(`设置数量: ${quantity}`);
     logger.info(`目标时间: ${formatToUTC8(targetTime)} (UTC+8)`);
     logger.info(`当前校准时间: ${formatToUTC8(getAdjustedDate())}`);
+    logger.info(`持续下单时间: ${duration}ms`);
+    logger.info(`提前开始时间: ${startOffset}ms`);
     logger.info("=======================================");
 
     // 读取所有账户
     const accounts = JSON.parse(fs.readFileSync("./apis.json", "utf-8"));
     logger.info(`准备为 ${accounts.length} 个账号下单`);
 
-    // 执行主程序
-    await main(price, targetTime, quantity);
+    // 执行主程序，使用新的参数
+    await main(
+      price,
+      targetTime,
+      quantity,
+      accounts,
+      duration,
+      startOffset,
+      [30, 15, 5],
+      symbol,
+      side
+    );
     logger.success("下单程序执行完成");
   } catch (error) {
     logger.error(`运行过程中出错: ${error}`);

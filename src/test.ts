@@ -4,8 +4,10 @@ import {
   order,
   cancelAllLimitOrders,
   main as orderMain,
-  tryOrderUntilSuccess,
+  placeOrdersNonBlocking,
+  batchPlaceOrdersNonBlocking,
   queryLimitOrders,
+  warmupConnection,
 } from "./order";
 import { getTestLogger, closeAllLoggers } from "./logger";
 
